@@ -1,345 +1,761 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Welche Datenstruktur passt?</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,MONO@-15..0,300..900,0..1,0..1&display=swap">
-<style>
-/* Layout: one narrow lesson column; each question is a "Fall" (case) card, structure glyphs as the visual language */
-:root {
-  --bg: #eef1f4;
-  --surface: #ffffff;
-  --ink: #18212d;
-  --muted: #5a6676;
-  --line: #d3d9e1;
-  --accent: #2446c7;
-  --accent-soft: #e2e8fb;
-  --ok: #17794a;
-  --ok-soft: #dff2e7;
-  --bad: #b3261e;
-  --bad-soft: #f9e1df;
-  --code-bg: #f4f6f9;
-  --sans: "Recursive", ui-sans-serif, system-ui, sans-serif;
-  --mono: "Recursive", ui-monospace, "SFMono-Regular", Menlo, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #11161d; --surface: #19202a; --ink: #e6ebf2; --muted: #9aa6b6; --line: #2c3644;
-    --accent: #8ea6ff; --accent-soft: #232f52; --ok: #5fd096; --ok-soft: #173326;
-    --bad: #ff8f86; --bad-soft: #3a1d1c; --code-bg: #131920; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #11161d; --surface: #19202a; --ink: #e6ebf2; --muted: #9aa6b6; --line: #2c3644;
-  --accent: #8ea6ff; --accent-soft: #232f52; --ok: #5fd096; --ok-soft: #173326;
-  --bad: #ff8f86; --bad-soft: #3a1d1c; --code-bg: #131920; color-scheme: dark;
-}
-*, *::before, *::after { box-sizing: border-box; }
-body {
-  background: var(--bg); color: var(--ink);
-  font-family: var(--sans); font-size: 16px; line-height: 1.55;
-  font-variation-settings: "CASL" 0.3;
-}
-.wrap {
-  max-width: 720px; margin: 0 auto;
-  padding-block: 32px 64px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: grid; gap: 24px;
-}
-header { display: grid; gap: 10px; }
-.eyebrow {
-  font-family: var(--mono); font-variation-settings: "MONO" 1, "CASL" 0;
-  font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
-}
-h1 {
-  margin: 0; font-size: clamp(30px, 6vw, 44px); line-height: 1.08; font-weight: 800;
-  font-variation-settings: "CASL" 1, "slnt" 0; text-wrap: balance; letter-spacing: -.01em;
-}
-.lede { margin: 0; color: var(--muted); max-width: 60ch; }
-.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 6px; }
-.legend span { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+<!doctype html>
+<html lang="de">
 
-/* progress */
-.progress { display: grid; gap: 8px; }
-.progress-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.pips { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 4px; }
-.pip { height: 6px; border-radius: 3px; background: var(--line); }
-.pip.ok { background: var(--ok); }
-.pip.bad { background: var(--bad); }
-.pip.now { background: var(--accent); }
+  <head>
+    <meta charset=utf8>
+    <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <style>
+      :root {
+        color-scheme: light;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px)
+      }
 
-/* question card */
-.card {
-  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-  padding: 24px; display: grid; gap: 18px; min-width: 0;
-}
-.case { font-family: var(--mono); font-variation-settings: "MONO" 1, "CASL" 0; font-size: 12px; color: var(--accent); letter-spacing: .06em; text-transform: uppercase; }
-.prompt { margin: 0; font-size: 19px; font-weight: 600; line-height: 1.45; text-wrap: pretty; }
-pre {
-  margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
-  padding: 12px 14px; overflow-x: auto; font-size: 14px; line-height: 1.5;
-}
-code { font-family: var(--mono); font-variation-settings: "MONO" 1, "CASL" 0; }
-p code, li code, .explain code, .opt code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .92em; }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px)
+      }
 
-.options { display: grid; gap: 10px; }
-.options.grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 480px) { .options.grid4 { grid-template-columns: 1fr; } }
-.opt {
-  appearance: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer;
-  background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px;
-  padding: 12px 14px; display: flex; align-items: center; gap: 12px; min-width: 0;
-  transition: border-color .15s, background .15s, transform .1s;
-}
-.opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
-.opt:active:not(:disabled) { transform: scale(.99); }
-.opt:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.opt:disabled { cursor: default; }
-.opt.correct { border-color: var(--ok); background: var(--ok-soft); }
-.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
-.opt.dim { opacity: .55; }
-.opt .letter {
-  flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-  font-size: 13px; font-weight: 700; border: 1.5px solid var(--line); color: var(--muted);
-}
-.opt.correct .letter { border-color: var(--ok); color: var(--ok); }
-.opt.wrong .letter { border-color: var(--bad); color: var(--bad); }
-.opt .txt { min-width: 0; }
-.opt .txt b { display: block; font-weight: 700; }
-.opt .txt small { color: var(--muted); font-size: 13px; }
+      body {
+        margin: 0;
+        padding: 0;
+        font: 14px -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #fff;
+        color: #000
+      }
 
-.glyph { flex: none; width: 36px; height: 26px; color: var(--accent); }
-.glyph rect, .glyph path, .glyph line { fill: none; stroke: currentColor; stroke-width: 1.6; }
-.glyph .fill { fill: currentColor; opacity: .25; }
+      img {
+        max-width: 100%
+      }
 
-.feedback {
-  border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px;
-  border: 1px solid var(--line); background: var(--code-bg);
-}
-.feedback .verdict { font-weight: 800; font-variation-settings: "CASL" 1; }
-.feedback.ok .verdict { color: var(--ok); }
-.feedback.bad .verdict { color: var(--bad); }
-.explain { margin: 0; }
-.hint-btn {
-  justify-self: start; appearance: none; font: inherit; font-size: 14px; color: var(--accent);
-  background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
-}
-.hint-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-.hint { margin: 0; font-size: 14px; color: var(--muted); }
+      [hidden]:not([hidden=until-found i]) {
+        display: none !important
+      }
+    </style>
+  </head>
+  <link rel='icon'
+    href='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>'>
 
-.actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-.btn {
-  appearance: none; font: inherit; font-weight: 700; cursor: pointer;
-  background: var(--accent); color: var(--surface); border: none; border-radius: 10px; padding: 11px 20px;
-}
-.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
-.btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  <title>Welche Datenstruktur passt?</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,MONO@-15..0,300..900,0..1,0..1&display=swap">
+  <style>
+    /* Layout: one narrow lesson column; each question is a "Fall" (case) card, structure glyphs as the visual language */
+    :root {
+      --bg: #eef1f4;
+      --surface: #ffffff;
+      --ink: #18212d;
+      --muted: #5a6676;
+      --line: #d3d9e1;
+      --accent: #2446c7;
+      --accent-soft: #e2e8fb;
+      --ok: #17794a;
+      --ok-soft: #dff2e7;
+      --bad: #b3261e;
+      --bad-soft: #f9e1df;
+      --code-bg: #f4f6f9;
+      --sans: "Recursive", ui-sans-serif, system-ui, sans-serif;
+      --mono: "Recursive", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    }
 
-/* results */
-.score { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.score .big { font-size: 56px; font-weight: 900; line-height: 1; font-variation-settings: "CASL" 1; font-variant-numeric: tabular-nums; }
-.score .of { color: var(--muted); font-size: 18px; }
-.breakdown { display: grid; gap: 10px; }
-.brow { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 12px; }
-.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
-.bname { font-weight: 600; font-size: 14px; }
-.bnum { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #11161d;
+        --surface: #19202a;
+        --ink: #e6ebf2;
+        --muted: #9aa6b6;
+        --line: #2c3644;
+        --accent: #8ea6ff;
+        --accent-soft: #232f52;
+        --ok: #5fd096;
+        --ok-soft: #173326;
+        --bad: #ff8f86;
+        --bad-soft: #3a1d1c;
+        --code-bg: #131920;
+        color-scheme: dark;
+      }
+    }
 
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
-table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 520px; }
-th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; background: var(--code-bg); }
-tr:last-child td { border-bottom: none; }
-td.o { font-family: var(--mono); font-variation-settings: "MONO" 1, "CASL" 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
-h2 { margin: 0; font-size: 20px; font-variation-settings: "CASL" 1; }
+    :root[data-theme="dark"] {
+      --bg: #11161d;
+      --surface: #19202a;
+      --ink: #e6ebf2;
+      --muted: #9aa6b6;
+      --line: #2c3644;
+      --accent: #8ea6ff;
+      --accent-soft: #232f52;
+      --ok: #5fd096;
+      --ok-soft: #173326;
+      --bad: #ff8f86;
+      --bad-soft: #3a1d1c;
+      --code-bg: #131920;
+      color-scheme: dark;
+    }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-</style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
 
-<div class="wrap">
-  <header>
-    <div class="eyebrow">Lineare Datenstrukturen · Python</div>
-    <h1>Welche Datenstruktur passt?</h1>
-    <p class="lede">15 Fälle aus der Praxis. Entscheide jeweils, welche Struktur am besten passt, und lies danach die Begründung. Die Big-O-Angaben beziehen sich auf CPython.</p>
-    <div class="legend" id="legend"></div>
-  </header>
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.55;
+      font-variation-settings: "CASL" 0.3;
+    }
 
-  <div class="progress" id="progress">
-    <div class="progress-row"><span id="progLabel">Fall 1 von 12</span><span id="progScore">0 richtig</span></div>
-    <div class="pips" id="pips"></div>
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding-block: 32px 64px;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      display: grid;
+      gap: 24px;
+    }
+
+    header {
+      display: grid;
+      gap: 10px;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-variation-settings: "MONO" 1, "CASL" 0;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 6vw, 44px);
+      line-height: 1.08;
+      font-weight: 800;
+      font-variation-settings: "CASL" 1, "slnt" 0;
+      text-wrap: balance;
+      letter-spacing: -.01em;
+    }
+
+    .lede {
+      margin: 0;
+      color: var(--muted);
+      max-width: 60ch;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 6px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* progress */
+    .progress {
+      display: grid;
+      gap: 8px;
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pips {
+      display: grid;
+      grid-template-columns: repeat(var(--n), 1fr);
+      gap: 4px;
+    }
+
+    .pip {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--line);
+    }
+
+    .pip.ok {
+      background: var(--ok);
+    }
+
+    .pip.bad {
+      background: var(--bad);
+    }
+
+    .pip.now {
+      background: var(--accent);
+    }
+
+    /* question card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .case {
+      font-family: var(--mono);
+      font-variation-settings: "MONO" 1, "CASL" 0;
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .prompt {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 600;
+      line-height: 1.45;
+      text-wrap: pretty;
+    }
+
+    pre {
+      margin: 0;
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-variation-settings: "MONO" 1, "CASL" 0;
+    }
+
+    p code,
+    li code,
+    .explain code,
+    .opt code {
+      background: var(--code-bg);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: .92em;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .options.grid4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 480px) {
+      .options.grid4 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .opt {
+      appearance: none;
+      font: inherit;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      background: var(--surface);
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      transition: border-color .15s, background .15s, transform .1s;
+    }
+
+    .opt:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .opt:active:not(:disabled) {
+      transform: scale(.99);
+    }
+
+    .opt:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .opt:disabled {
+      cursor: default;
+    }
+
+    .opt.correct {
+      border-color: var(--ok);
+      background: var(--ok-soft);
+    }
+
+    .opt.wrong {
+      border-color: var(--bad);
+      background: var(--bad-soft);
+    }
+
+    .opt.dim {
+      opacity: .55;
+    }
+
+    .opt .letter {
+      flex: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1.5px solid var(--line);
+      color: var(--muted);
+    }
+
+    .opt.correct .letter {
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    .opt.wrong .letter {
+      border-color: var(--bad);
+      color: var(--bad);
+    }
+
+    .opt .txt {
+      min-width: 0;
+    }
+
+    .opt .txt b {
+      display: block;
+      font-weight: 700;
+    }
+
+    .opt .txt small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .glyph {
+      flex: none;
+      width: 36px;
+      height: 26px;
+      color: var(--accent);
+    }
+
+    .glyph rect,
+    .glyph path,
+    .glyph line {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+    }
+
+    .glyph .fill {
+      fill: currentColor;
+      opacity: .25;
+    }
+
+    .feedback {
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: grid;
+      gap: 6px;
+      border: 1px solid var(--line);
+      background: var(--code-bg);
+    }
+
+    .feedback .verdict {
+      font-weight: 800;
+      font-variation-settings: "CASL" 1;
+    }
+
+    .feedback.ok .verdict {
+      color: var(--ok);
+    }
+
+    .feedback.bad .verdict {
+      color: var(--bad);
+    }
+
+    .explain {
+      margin: 0;
+    }
+
+    .hint-btn {
+      justify-self: start;
+      appearance: none;
+      font: inherit;
+      font-size: 14px;
+      color: var(--accent);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .hint-btn:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      appearance: none;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent);
+      color: var(--surface);
+      border: none;
+      border-radius: 10px;
+      padding: 11px 20px;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    /* results */
+    .score {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .score .big {
+      font-size: 56px;
+      font-weight: 900;
+      line-height: 1;
+      font-variation-settings: "CASL" 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score .of {
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .breakdown {
+      display: grid;
+      gap: 10px;
+    }
+
+    .brow {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--line);
+      overflow: hidden;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+    }
+
+    .bname {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .bnum {
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 14px;
+      min-width: 520px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      font-weight: 700;
+      background: var(--code-bg);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    td.o {
+      font-family: var(--mono);
+      font-variation-settings: "MONO" 1, "CASL" 0;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-variation-settings: "CASL" 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+      }
+    }
+  </style>
+
+  <body></body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Lineare Datenstrukturen · Python</div>
+      <h1>Welche Datenstruktur passt?</h1>
+      <p class="lede">15 Fälle aus der Praxis. Entscheide jeweils, welche Struktur am besten passt, und lies danach die
+        Begründung. Die Big-O-Angaben beziehen sich auf CPython.</p>
+      <div class="legend" id="legend"></div>
+    </header>
+
+    <div class="progress" id="progress">
+      <div class="progress-row"><span id="progLabel">Fall 1 von 12</span><span id="progScore">0 richtig</span></div>
+      <div class="pips" id="pips"></div>
+    </div>
+
+    <main id="stage"></main>
   </div>
 
-  <main id="stage"></main>
-</div>
+  <script>
+    const GLYPHS = {
+      array: '<svg class="glyph" viewBox="0 0 36 26" aria-hidden="true"><rect x="1" y="7" width="8.5" height="12" class="fill"/><rect x="1" y="7" width="8.5" height="12"/><rect x="9.5" y="7" width="8.5" height="12"/><rect x="18" y="7" width="8.5" height="12"/><rect x="26.5" y="7" width="8.5" height="12"/></svg>',
+      stack: '<svg class="glyph" viewBox="0 0 36 26" aria-hidden="true"><rect x="8" y="1.5" width="20" height="6.5" class="fill"/><rect x="8" y="1.5" width="20" height="6.5"/><rect x="8" y="9.5" width="20" height="6.5"/><rect x="8" y="17.5" width="20" height="6.5"/></svg>',
+      queue: '<svg class="glyph" viewBox="0 0 36 26" aria-hidden="true"><rect x="1" y="8" width="7" height="10" class="fill"/><rect x="1" y="8" width="7" height="10"/><rect x="9.5" y="8" width="7" height="10"/><rect x="18" y="8" width="7" height="10"/><path d="M27 13h8M32 10l3 3-3 3"/></svg>',
+      linked: '<svg class="glyph" viewBox="0 0 36 26" aria-hidden="true"><rect x="1" y="8" width="7" height="10" class="fill"/><rect x="1" y="8" width="7" height="10"/><path d="M8 13h5"/><rect x="13" y="8" width="7" height="10"/><path d="M20 13h5"/><rect x="25" y="8" width="7" height="10"/><path d="M32 13h3"/></svg>'
+    };
+    const NAMES = { array: "Array / Python-list", stack: "Stack", queue: "Queue", linked: "Verkettete Liste" };
+    const SUBS = { array: "Index-Zugriff", stack: "LIFO", queue: "FIFO", linked: "Knoten mit Zeigern" };
 
-<script>
-const GLYPHS = {
-  array: '<svg class="glyph" viewBox="0 0 36 26" aria-hidden="true"><rect x="1" y="7" width="8.5" height="12" class="fill"/><rect x="1" y="7" width="8.5" height="12"/><rect x="9.5" y="7" width="8.5" height="12"/><rect x="18" y="7" width="8.5" height="12"/><rect x="26.5" y="7" width="8.5" height="12"/></svg>',
-  stack: '<svg class="glyph" viewBox="0 0 36 26" aria-hidden="true"><rect x="8" y="1.5" width="20" height="6.5" class="fill"/><rect x="8" y="1.5" width="20" height="6.5"/><rect x="8" y="9.5" width="20" height="6.5"/><rect x="8" y="17.5" width="20" height="6.5"/></svg>',
-  queue: '<svg class="glyph" viewBox="0 0 36 26" aria-hidden="true"><rect x="1" y="8" width="7" height="10" class="fill"/><rect x="1" y="8" width="7" height="10"/><rect x="9.5" y="8" width="7" height="10"/><rect x="18" y="8" width="7" height="10"/><path d="M27 13h8M32 10l3 3-3 3"/></svg>',
-  linked: '<svg class="glyph" viewBox="0 0 36 26" aria-hidden="true"><rect x="1" y="8" width="7" height="10" class="fill"/><rect x="1" y="8" width="7" height="10"/><path d="M8 13h5"/><rect x="13" y="8" width="7" height="10"/><path d="M20 13h5"/><rect x="25" y="8" width="7" height="10"/><path d="M32 13h3"/></svg>'
-};
-const NAMES = { array: "Array / Python-list", stack: "Stack", queue: "Queue", linked: "Verkettete Liste" };
-const SUBS = { array: "Index-Zugriff", stack: "LIFO", queue: "FIFO", linked: "Knoten mit Zeigern" };
+    const DS = ["array", "stack", "queue", "linked"];
 
-const DS = ["array", "stack", "queue", "linked"];
+    const QUESTIONS = [
+      {
+        topic: "stack",
+        prompt: "Du baust den „Zurück“-Button für einen Browser. Jede besuchte Seite wird gespeichert, „Zurück“ soll immer zur zuletzt besuchten Seite springen.",
+        ds: true, answer: "stack",
+        hint: "Welche Seite brauchst du zuerst: die älteste oder die neueste?",
+        explain: "Die zuletzt besuchte Seite muss als Erste wieder heraus: LIFO. Jede neue Seite wird mit <code>push</code> oben abgelegt, „Zurück“ macht ein <code>pop</code>. Beides ist O(1)."
+      },
+      {
+        topic: "queue",
+        prompt: "Ein Drucker im Büro bekommt Aufträge von mehreren Leuten. Sie sollen genau in der Reihenfolge gedruckt werden, in der sie angekommen sind.",
+        ds: true, answer: "queue",
+        hint: "Denk an die Schlange an der Eisdiele.",
+        explain: "Wer zuerst kommt, wird zuerst bedient: FIFO. Neue Aufträge kommen per <code>enqueue</code> hinten dazu, der Drucker holt sich per <code>dequeue</code> den vordersten."
+      },
+      {
+        topic: "stack",
+        prompt: "Ein Programm sucht den Weg durch ein Labyrinth. Es läuft so weit wie möglich. Landet es in einer Sackgasse, geht es zur letzten Abzweigung zurück und probiert dort den nächsten Weg. Wo merkt es sich die Abzweigungen?",
+        ds: true, answer: "stack",
+        hint: "Zu welcher Abzweigung geht es nach einer Sackgasse zurück: zur ersten oder zur letzten?",
+        explain: "Das Verfahren heißt Backtracking. Jede Abzweigung wird gepusht. In der Sackgasse holt <code>pop</code> die zuletzt besuchte Abzweigung zurück, nicht die erste. Mit einer Queue würde das Programm stattdessen alle Wege gleichzeitig Schritt für Schritt ausprobieren."
+      },
+      {
+        topic: "array",
+        prompt: "Du speicherst die Tageshöchsttemperaturen eines Jahres (365 Werte). Dein Programm fragt ständig Werte wie „Tag 172“ direkt ab.",
+        ds: true, answer: "array",
+        hint: "Welche Struktur kann ein bestimmtes Element ohne Durchlaufen finden?",
+        explain: "Direkter Zugriff über den Index (<code>temps[171]</code>) ist bei einem Array in O(1) möglich. Eine verkettete Liste müsste sich vom Anfang bis Tag 172 durchhangeln, also O(n)."
+      },
+      {
+        topic: "stack",
+        prompt: "Ein Texteditor soll eine „Rückgängig“-Funktion (Strg+Z) bekommen, die die letzten Änderungen Schritt für Schritt zurücknimmt.",
+        ds: true, answer: "stack",
+        hint: "Welche Änderung wird beim ersten Strg+Z rückgängig gemacht?",
+        explain: "Die jüngste Änderung wird zuerst zurückgenommen, dann die davor. Das ist LIFO, also ein Stack. Jede Änderung wird gepusht, Strg+Z poppt die oberste."
+      },
+      {
+        topic: "stack",
+        prompt: "Was passiert intern, wenn Python <code>fakultät(5)</code> rekursiv ausrechnet? Welche Struktur merkt sich die wartenden Aufrufe?",
+        code: "def fakultät(n):\n    if n <= 1:\n        return 1\n    return n * fakultät(n - 1)",
+        ds: true, answer: "stack",
+        hint: "Welcher Aufruf liefert zuerst ein Ergebnis zurück?",
+        explain: "Jeder Aufruf landet auf dem <strong>Call Stack</strong> und wartet. <code>fakultät(1)</code> kommt zuletzt dazu, gibt aber als Erstes zurück. Danach werden die Aufrufe in umgekehrter Reihenfolge abgearbeitet: LIFO."
+      },
+      {
+        topic: "queue",
+        prompt: "Deine Queue nutzt intern eine Python-Liste. Bei 1 Million wartenden Elementen wird <code>dequeue()</code> spürbar langsam. Warum?",
+        code: "def dequeue(self):\n    return self.items.pop(0)",
+        ds: false,
+        options: [
+          { t: "<code>pop(0)</code> entfernt das erste Element, danach rücken alle anderen einen Platz nach vorne: O(n)." },
+          { t: "Python-Listen sind auf 1 Million Elemente begrenzt." },
+          { t: "<code>pop(0)</code> sortiert die Liste vor dem Entfernen." },
+          { t: "Python prüft bei jedem <code>pop</code>, ob die Liste leer ist, und das dauert O(n)." }
+        ],
+        answer: 0,
+        hint: "Was muss mit den übrigen Elementen passieren, wenn vorne eins fehlt?",
+        explain: "Eine Python-Liste liegt zusammenhängend im Speicher. Fehlt vorne ein Element, müssen alle anderen nachrücken. Besser: <code>collections.deque</code> mit <code>popleft()</code> in O(1), oder ein <code>head</code>-Zeiger wie in unserer <code>DeQueue</code>-Klasse."
+      },
+      {
+        topic: "queue",
+        prompt: "Ein Server-Monitor soll immer nur die letzten 100 Log-Meldungen anzeigen. Kommt eine neue Meldung dazu, fällt die älteste weg. Was passt am besten?",
+        ds: true, answer: "queue",
+        hint: "An welchem Ende kommt etwas dazu, an welchem fällt etwas weg?",
+        explain: "Neue Meldungen kommen hinten dazu, die älteste verschwindet vorne: FIFO. Auch wenn hier niemand „bedient“ wird, ist das eine Queue. In Python erledigt <code>deque(maxlen=100)</code> das automatisch: Beim 101. <code>append</code> fliegt das älteste Element raus."
+      },
+      {
+        topic: "linked",
+        prompt: "Eine Musik-App verwaltet eine Playlist. Nutzer fügen ständig Songs zwischen anderen Songs ein oder entfernen sie. Die App hat dabei den aktuellen Song schon „in der Hand“. Was passt am besten?",
+        ds: true, answer: "linked",
+        hint: "Welche Struktur muss beim Einfügen in der Mitte nichts verschieben?",
+        explain: "In einer verketteten Liste zeigt jeder Knoten auf den nächsten. Kennst du die Position bereits, reicht es, zwei Zeiger umzubiegen: O(1). Bei einem Array müssten alle folgenden Elemente verschoben werden: O(n)."
+      },
+      {
+        topic: "array",
+        prompt: "Du hast 10.000 sortierte Kundennummern und willst sie mit binärer Suche durchsuchen. Welche Struktur brauchst du dafür?",
+        ds: true, answer: "array",
+        hint: "Binäre Suche springt immer in die Mitte des Suchbereichs.",
+        explain: "Binäre Suche braucht schnellen Zugriff auf die Mitte (<code>items[mid]</code>). Im Array ist das O(1), insgesamt also O(log n). In einer verketteten Liste kostet schon das Finden der Mitte O(n), damit geht der Vorteil verloren."
+      },
+      {
+        topic: "stack",
+        prompt: "Du sollst prüfen, ob die Klammern in einem Ausdruck korrekt geschlossen sind, zum Beispiel <code>([]{})</code> ist gültig, <code>([)]</code> nicht.",
+        ds: true, answer: "stack",
+        hint: "Jede schließende Klammer muss zur zuletzt geöffneten passen.",
+        explain: "Öffnende Klammern werden gepusht. Bei einer schließenden Klammer wird gepoppt und verglichen. Passt sie nicht oder ist der Stack am Ende nicht leer, ist der Ausdruck ungültig."
+      },
+      {
+        topic: "queue",
+        prompt: "Ein Online-Shop bekommt viele Bestellungen gleichzeitig. Ein Hintergrundprozess soll sie fair nacheinander abarbeiten, älteste Bestellung zuerst.",
+        ds: true, answer: "queue",
+        hint: "„Älteste zuerst“ ist das Stichwort.",
+        explain: "Das ist FIFO, also eine Queue. In Python am besten mit <code>collections.deque</code>: <code>append()</code> hinten anstellen, <code>popleft()</code> vorne abholen, beides O(1)."
+      },
+      {
+        topic: "linked",
+        prompt: "Ein Cache hält die Einträge sortiert danach, wie kürzlich sie benutzt wurden. Wird ein Eintrag aus der Mitte benutzt, wandert er an den Anfang. Ist der Cache voll, fliegt der Eintrag am Ende raus. Du hast für jeden Eintrag schon eine direkte Referenz. Was eignet sich als Grundlage?",
+        ds: true, answer: "linked",
+        hint: "Was kostet es, ein Element aus der Mitte zu lösen und vorne wieder einzuhängen?",
+        explain: "Das ist ein LRU-Cache („Least Recently Used“). Mit einer verketteten Liste löst du den Knoten heraus und hängst ihn vorne ein, indem du nur Zeiger umbiegst: O(1). Im Array müsstest du dafür Elemente verschieben: O(n). Eine reine Queue reicht nicht, weil sie kein Herausnehmen aus der Mitte kennt."
+      },
+      {
+        topic: "array",
+        prompt: "Welche Aussage über die Python-<code>list</code> (in CPython) stimmt?",
+        ds: false,
+        options: [
+          { t: "Sie speichert Referenzen auf Objekte und kann dynamisch wachsen und schrumpfen." },
+          { t: "Sie darf nur Werte desselben Typs enthalten, wie ein klassisches Array." },
+          { t: "Ihre Größe wird beim Anlegen festgelegt und ist danach fix." },
+          { t: "Sie ist intern eine verkettete Liste, deshalb ist <code>items[i]</code> O(n)." }
+        ],
+        answer: 0,
+        hint: "Kannst du <code>[1, \"zwei\", 3.0]</code> in Python schreiben?",
+        explain: "Eine Python-Liste ist ein dynamisches Array aus Referenzen. Die Referenzen liegen zusammenhängend, die Objekte selbst können anderswo liegen. Deshalb darf sie gemischte Typen enthalten und trotzdem bleibt <code>items[i]</code> O(1)."
+      },
+      {
+        topic: "linked",
+        prompt: "Wann ist eine verkettete Liste eine <em>schlechte</em> Wahl?",
+        ds: false,
+        options: [
+          { t: "Wenn du oft auf ein bestimmtes Element über seine Position zugreifen musst, etwa das 500. Element." },
+          { t: "Wenn du oft am Anfang einfügst." },
+          { t: "Wenn du nicht weißt, wie viele Elemente es am Ende werden." },
+          { t: "Wenn du Elemente entfernst, deren Vorgänger du schon kennst." }
+        ],
+        answer: 0,
+        hint: "Woher weiß eine verkettete Liste, wo das 500. Element liegt?",
+        explain: "Eine verkettete Liste hat keinen Index. Um zum 500. Element zu kommen, folgst du 499 Zeigern: O(n). Einfügen am Anfang, unbekannte Größe und Entfernen bei bekanntem Vorgänger sind dagegen ihre Stärken."
+      }
+    ];
 
-const QUESTIONS = [
-  {
-    topic: "stack",
-    prompt: "Du baust den „Zurück“-Button für einen Browser. Jede besuchte Seite wird gespeichert, „Zurück“ soll immer zur zuletzt besuchten Seite springen.",
-    ds: true, answer: "stack",
-    hint: "Welche Seite brauchst du zuerst: die älteste oder die neueste?",
-    explain: "Die zuletzt besuchte Seite muss als Erste wieder heraus: LIFO. Jede neue Seite wird mit <code>push</code> oben abgelegt, „Zurück“ macht ein <code>pop</code>. Beides ist O(1)."
-  },
-  {
-    topic: "queue",
-    prompt: "Ein Drucker im Büro bekommt Aufträge von mehreren Leuten. Sie sollen genau in der Reihenfolge gedruckt werden, in der sie angekommen sind.",
-    ds: true, answer: "queue",
-    hint: "Denk an die Schlange an der Eisdiele.",
-    explain: "Wer zuerst kommt, wird zuerst bedient: FIFO. Neue Aufträge kommen per <code>enqueue</code> hinten dazu, der Drucker holt sich per <code>dequeue</code> den vordersten."
-  },
-  {
-    topic: "stack",
-    prompt: "Ein Programm sucht den Weg durch ein Labyrinth. Es läuft so weit wie möglich. Landet es in einer Sackgasse, geht es zur letzten Abzweigung zurück und probiert dort den nächsten Weg. Wo merkt es sich die Abzweigungen?",
-    ds: true, answer: "stack",
-    hint: "Zu welcher Abzweigung geht es nach einer Sackgasse zurück: zur ersten oder zur letzten?",
-    explain: "Das Verfahren heißt Backtracking. Jede Abzweigung wird gepusht. In der Sackgasse holt <code>pop</code> die zuletzt besuchte Abzweigung zurück, nicht die erste. Mit einer Queue würde das Programm stattdessen alle Wege gleichzeitig Schritt für Schritt ausprobieren."
-  },
-  {
-    topic: "array",
-    prompt: "Du speicherst die Tageshöchsttemperaturen eines Jahres (365 Werte). Dein Programm fragt ständig Werte wie „Tag 172“ direkt ab.",
-    ds: true, answer: "array",
-    hint: "Welche Struktur kann ein bestimmtes Element ohne Durchlaufen finden?",
-    explain: "Direkter Zugriff über den Index (<code>temps[171]</code>) ist bei einem Array in O(1) möglich. Eine verkettete Liste müsste sich vom Anfang bis Tag 172 durchhangeln, also O(n)."
-  },
-  {
-    topic: "stack",
-    prompt: "Ein Texteditor soll eine „Rückgängig“-Funktion (Strg+Z) bekommen, die die letzten Änderungen Schritt für Schritt zurücknimmt.",
-    ds: true, answer: "stack",
-    hint: "Welche Änderung wird beim ersten Strg+Z rückgängig gemacht?",
-    explain: "Die jüngste Änderung wird zuerst zurückgenommen, dann die davor. Das ist LIFO, also ein Stack. Jede Änderung wird gepusht, Strg+Z poppt die oberste."
-  },
-  {
-    topic: "stack",
-    prompt: "Was passiert intern, wenn Python <code>fakultät(5)</code> rekursiv ausrechnet? Welche Struktur merkt sich die wartenden Aufrufe?",
-    code: "def fakultät(n):\n    if n <= 1:\n        return 1\n    return n * fakultät(n - 1)",
-    ds: true, answer: "stack",
-    hint: "Welcher Aufruf liefert zuerst ein Ergebnis zurück?",
-    explain: "Jeder Aufruf landet auf dem <strong>Call Stack</strong> und wartet. <code>fakultät(1)</code> kommt zuletzt dazu, gibt aber als Erstes zurück. Danach werden die Aufrufe in umgekehrter Reihenfolge abgearbeitet: LIFO."
-  },
-  {
-    topic: "queue",
-    prompt: "Deine Queue nutzt intern eine Python-Liste. Bei 1 Million wartenden Elementen wird <code>dequeue()</code> spürbar langsam. Warum?",
-    code: "def dequeue(self):\n    return self.items.pop(0)",
-    ds: false,
-    options: [
-      { t: "<code>pop(0)</code> entfernt das erste Element, danach rücken alle anderen einen Platz nach vorne: O(n)." },
-      { t: "Python-Listen sind auf 1 Million Elemente begrenzt." },
-      { t: "<code>pop(0)</code> sortiert die Liste vor dem Entfernen." },
-      { t: "Python prüft bei jedem <code>pop</code>, ob die Liste leer ist, und das dauert O(n)." }
-    ],
-    answer: 0,
-    hint: "Was muss mit den übrigen Elementen passieren, wenn vorne eins fehlt?",
-    explain: "Eine Python-Liste liegt zusammenhängend im Speicher. Fehlt vorne ein Element, müssen alle anderen nachrücken. Besser: <code>collections.deque</code> mit <code>popleft()</code> in O(1), oder ein <code>head</code>-Zeiger wie in unserer <code>DeQueue</code>-Klasse."
-  },
-  {
-    topic: "queue",
-    prompt: "Ein Server-Monitor soll immer nur die letzten 100 Log-Meldungen anzeigen. Kommt eine neue Meldung dazu, fällt die älteste weg. Was passt am besten?",
-    ds: true, answer: "queue",
-    hint: "An welchem Ende kommt etwas dazu, an welchem fällt etwas weg?",
-    explain: "Neue Meldungen kommen hinten dazu, die älteste verschwindet vorne: FIFO. Auch wenn hier niemand „bedient“ wird, ist das eine Queue. In Python erledigt <code>deque(maxlen=100)</code> das automatisch: Beim 101. <code>append</code> fliegt das älteste Element raus."
-  },
-  {
-    topic: "linked",
-    prompt: "Eine Musik-App verwaltet eine Playlist. Nutzer fügen ständig Songs zwischen anderen Songs ein oder entfernen sie. Die App hat dabei den aktuellen Song schon „in der Hand“. Was passt am besten?",
-    ds: true, answer: "linked",
-    hint: "Welche Struktur muss beim Einfügen in der Mitte nichts verschieben?",
-    explain: "In einer verketteten Liste zeigt jeder Knoten auf den nächsten. Kennst du die Position bereits, reicht es, zwei Zeiger umzubiegen: O(1). Bei einem Array müssten alle folgenden Elemente verschoben werden: O(n)."
-  },
-  {
-    topic: "array",
-    prompt: "Du hast 10.000 sortierte Kundennummern und willst sie mit binärer Suche durchsuchen. Welche Struktur brauchst du dafür?",
-    ds: true, answer: "array",
-    hint: "Binäre Suche springt immer in die Mitte des Suchbereichs.",
-    explain: "Binäre Suche braucht schnellen Zugriff auf die Mitte (<code>items[mid]</code>). Im Array ist das O(1), insgesamt also O(log n). In einer verketteten Liste kostet schon das Finden der Mitte O(n), damit geht der Vorteil verloren."
-  },
-  {
-    topic: "stack",
-    prompt: "Du sollst prüfen, ob die Klammern in einem Ausdruck korrekt geschlossen sind, zum Beispiel <code>([]{})</code> ist gültig, <code>([)]</code> nicht.",
-    ds: true, answer: "stack",
-    hint: "Jede schließende Klammer muss zur zuletzt geöffneten passen.",
-    explain: "Öffnende Klammern werden gepusht. Bei einer schließenden Klammer wird gepoppt und verglichen. Passt sie nicht oder ist der Stack am Ende nicht leer, ist der Ausdruck ungültig."
-  },
-  {
-    topic: "queue",
-    prompt: "Ein Online-Shop bekommt viele Bestellungen gleichzeitig. Ein Hintergrundprozess soll sie fair nacheinander abarbeiten, älteste Bestellung zuerst.",
-    ds: true, answer: "queue",
-    hint: "„Älteste zuerst“ ist das Stichwort.",
-    explain: "Das ist FIFO, also eine Queue. In Python am besten mit <code>collections.deque</code>: <code>append()</code> hinten anstellen, <code>popleft()</code> vorne abholen, beides O(1)."
-  },
-  {
-    topic: "linked",
-    prompt: "Ein Cache hält die Einträge sortiert danach, wie kürzlich sie benutzt wurden. Wird ein Eintrag aus der Mitte benutzt, wandert er an den Anfang. Ist der Cache voll, fliegt der Eintrag am Ende raus. Du hast für jeden Eintrag schon eine direkte Referenz. Was eignet sich als Grundlage?",
-    ds: true, answer: "linked",
-    hint: "Was kostet es, ein Element aus der Mitte zu lösen und vorne wieder einzuhängen?",
-    explain: "Das ist ein LRU-Cache („Least Recently Used“). Mit einer verketteten Liste löst du den Knoten heraus und hängst ihn vorne ein, indem du nur Zeiger umbiegst: O(1). Im Array müsstest du dafür Elemente verschieben: O(n). Eine reine Queue reicht nicht, weil sie kein Herausnehmen aus der Mitte kennt."
-  },
-  {
-    topic: "array",
-    prompt: "Welche Aussage über die Python-<code>list</code> (in CPython) stimmt?",
-    ds: false,
-    options: [
-      { t: "Sie speichert Referenzen auf Objekte und kann dynamisch wachsen und schrumpfen." },
-      { t: "Sie darf nur Werte desselben Typs enthalten, wie ein klassisches Array." },
-      { t: "Ihre Größe wird beim Anlegen festgelegt und ist danach fix." },
-      { t: "Sie ist intern eine verkettete Liste, deshalb ist <code>items[i]</code> O(n)." }
-    ],
-    answer: 0,
-    hint: "Kannst du <code>[1, \"zwei\", 3.0]</code> in Python schreiben?",
-    explain: "Eine Python-Liste ist ein dynamisches Array aus Referenzen. Die Referenzen liegen zusammenhängend, die Objekte selbst können anderswo liegen. Deshalb darf sie gemischte Typen enthalten und trotzdem bleibt <code>items[i]</code> O(1)."
-  },
-  {
-    topic: "linked",
-    prompt: "Wann ist eine verkettete Liste eine <em>schlechte</em> Wahl?",
-    ds: false,
-    options: [
-      { t: "Wenn du oft auf ein bestimmtes Element über seine Position zugreifen musst, etwa das 500. Element." },
-      { t: "Wenn du oft am Anfang einfügst." },
-      { t: "Wenn du nicht weißt, wie viele Elemente es am Ende werden." },
-      { t: "Wenn du Elemente entfernst, deren Vorgänger du schon kennst." }
-    ],
-    answer: 0,
-    hint: "Woher weiß eine verkettete Liste, wo das 500. Element liegt?",
-    explain: "Eine verkettete Liste hat keinen Index. Um zum 500. Element zu kommen, folgst du 499 Zeigern: O(n). Einfügen am Anfang, unbekannte Größe und Entfernen bei bekanntem Vorgänger sind dagegen ihre Stärken."
-  }
-];
+    const N = QUESTIONS.length;
+    let idx = 0;
+    const results = new Array(N).fill(null); // true / false / null
+    const stage = document.getElementById("stage");
+    const pips = document.getElementById("pips");
+    const progress = document.getElementById("progress");
 
-const N = QUESTIONS.length;
-let idx = 0;
-const results = new Array(N).fill(null); // true / false / null
-const stage = document.getElementById("stage");
-const pips = document.getElementById("pips");
-const progress = document.getElementById("progress");
+    document.getElementById("legend").innerHTML = DS.map(k => `<span>${GLYPHS[k]}${NAMES[k]}</span>`).join("");
+    pips.style.setProperty("--n", N);
 
-document.getElementById("legend").innerHTML = DS.map(k => `<span>${GLYPHS[k]}${NAMES[k]}</span>`).join("");
-pips.style.setProperty("--n", N);
+    function renderPips() {
+      pips.innerHTML = results.map((r, i) =>
+        `<div class="pip ${r === true ? "ok" : r === false ? "bad" : i === idx ? "now" : ""}"></div>`).join("");
+      document.getElementById("progLabel").textContent = idx < N ? `Fall ${idx + 1} von ${N}` : `Fertig`;
+      const right = results.filter(r => r === true).length;
+      document.getElementById("progScore").textContent = `${right} richtig`;
+    }
 
-function renderPips() {
-  pips.innerHTML = results.map((r, i) =>
-    `<div class="pip ${r === true ? "ok" : r === false ? "bad" : i === idx ? "now" : ""}"></div>`).join("");
-  document.getElementById("progLabel").textContent = idx < N ? `Fall ${idx + 1} von ${N}` : `Fertig`;
-  const right = results.filter(r => r === true).length;
-  document.getElementById("progScore").textContent = `${right} richtig`;
-}
-
-function renderQuestion() {
-  const q = QUESTIONS[idx];
-  const opts = q.ds
-    ? DS.map((k, i) => `<button class="opt" id="opt-${idx}-${i}" data-v="${k}">${GLYPHS[k]}<span class="txt"><b>${NAMES[k]}</b><small>${SUBS[k]}</small></span></button>`).join("")
-    : shuffle(q.options.map((o, i) => [o, i])).map(([o, i], pos) => `<button class="opt" id="opt-${idx}-${i}" data-v="${i}"><span class="letter">${"ABCD"[pos]}</span><span class="txt">${o.t}</span></button>`).join("");
-  stage.innerHTML = `
+    function renderQuestion() {
+      const q = QUESTIONS[idx];
+      const opts = q.ds
+        ? DS.map((k, i) => `<button class="opt" id="opt-${idx}-${i}" data-v="${k}">${GLYPHS[k]}<span class="txt"><b>${NAMES[k]}</b><small>${SUBS[k]}</small></span></button>`).join("")
+        : shuffle(q.options.map((o, i) => [o, i])).map(([o, i], pos) => `<button class="opt" id="opt-${idx}-${i}" data-v="${i}"><span class="letter">${"ABCD"[pos]}</span><span class="txt">${o.t}</span></button>`).join("");
+      stage.innerHTML = `
     <section class="card" aria-live="polite">
       <div class="case">Fall ${String(idx + 1).padStart(2, "0")}</div>
       <p class="prompt">${q.prompt}</p>
@@ -350,48 +766,48 @@ function renderQuestion() {
       <div id="fb"></div>
       <div class="actions"><button class="btn" id="next" hidden>${idx === N - 1 ? "Auswertung ansehen" : "Nächster Fall"}</button></div>
     </section>`;
-  stage.querySelector(".hint-btn").addEventListener("click", e => {
-    document.getElementById("hint").hidden = false; e.currentTarget.hidden = true;
-  });
-  stage.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => choose(b)));
-  document.getElementById("next").addEventListener("click", () => { idx++; idx < N ? renderQuestion() : renderResults(); renderPips(); stage.scrollIntoView({ block: "start", behavior: "smooth" }); });
-  renderPips();
-}
+      stage.querySelector(".hint-btn").addEventListener("click", e => {
+        document.getElementById("hint").hidden = false; e.currentTarget.hidden = true;
+      });
+      stage.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => choose(b)));
+      document.getElementById("next").addEventListener("click", () => { idx++; idx < N ? renderQuestion() : renderResults(); renderPips(); stage.scrollIntoView({ block: "start", behavior: "smooth" }); });
+      renderPips();
+    }
 
-function choose(btn) {
-  const q = QUESTIONS[idx];
-  const v = q.ds ? btn.dataset.v : Number(btn.dataset.v);
-  const ok = v === q.answer;
-  results[idx] = ok;
-  stage.querySelectorAll(".opt").forEach(b => {
-    b.disabled = true;
-    const bv = q.ds ? b.dataset.v : Number(b.dataset.v);
-    if (bv === q.answer) b.classList.add("correct");
-    else if (b === btn) b.classList.add("wrong");
-    else b.classList.add("dim");
-  });
-  stage.querySelector(".hint-btn").hidden = true;
-  document.getElementById("fb").innerHTML = `
+    function choose(btn) {
+      const q = QUESTIONS[idx];
+      const v = q.ds ? btn.dataset.v : Number(btn.dataset.v);
+      const ok = v === q.answer;
+      results[idx] = ok;
+      stage.querySelectorAll(".opt").forEach(b => {
+        b.disabled = true;
+        const bv = q.ds ? b.dataset.v : Number(b.dataset.v);
+        if (bv === q.answer) b.classList.add("correct");
+        else if (b === btn) b.classList.add("wrong");
+        else b.classList.add("dim");
+      });
+      stage.querySelector(".hint-btn").hidden = true;
+      document.getElementById("fb").innerHTML = `
     <div class="feedback ${ok ? "ok" : "bad"}">
       <div class="verdict">${ok ? "Richtig." : "Nicht richtig."}</div>
       <p class="explain">${q.explain}</p>
     </div>`;
-  const next = document.getElementById("next");
-  next.hidden = false; next.focus({ preventScroll: true });
-  renderPips();
-}
+      const next = document.getElementById("next");
+      next.hidden = false; next.focus({ preventScroll: true });
+      renderPips();
+    }
 
-function renderResults() {
-  const right = results.filter(Boolean).length;
-  const by = DS.map(k => {
-    const qs = QUESTIONS.map((q, i) => [q, i]).filter(([q]) => q.topic === k);
-    return { k, total: qs.length, ok: qs.filter(([, i]) => results[i]).length };
-  });
-  const msg = right === N ? "Alles richtig. Du kannst die vier Strukturen sicher auseinanderhalten."
-    : right >= N * 0.75 ? "Sehr solide. Schau dir die Fälle mit roter Markierung noch einmal an."
-    : right >= N * 0.5 ? "Guter Anfang. Die Tabelle unten hilft beim Wiederholen."
-    : "Kein Problem, das ist neuer Stoff. Geh die Tabelle unten durch und versuch es noch einmal.";
-  stage.innerHTML = `
+    function renderResults() {
+      const right = results.filter(Boolean).length;
+      const by = DS.map(k => {
+        const qs = QUESTIONS.map((q, i) => [q, i]).filter(([q]) => q.topic === k);
+        return { k, total: qs.length, ok: qs.filter(([, i]) => results[i]).length };
+      });
+      const msg = right === N ? "Alles richtig. Du kannst die vier Strukturen sicher auseinanderhalten."
+        : right >= N * 0.75 ? "Sehr solide. Schau dir die Fälle mit roter Markierung noch einmal an."
+          : right >= N * 0.5 ? "Guter Anfang. Die Tabelle unten hilft beim Wiederholen."
+            : "Kein Problem, das ist neuer Stoff. Geh die Tabelle unten durch und versuch es noch einmal.";
+      stage.innerHTML = `
     <section class="card">
       <div class="case">Auswertung</div>
       <div class="score"><span class="big">${right}</span><span class="of">von ${N} richtig</span></div>
@@ -413,13 +829,15 @@ function renderResults() {
         </tbody>
       </table></div>
     </section>`;
-  document.getElementById("restart").addEventListener("click", () => { results.fill(null); idx = 0; renderQuestion(); });
-}
+      document.getElementById("restart").addEventListener("click", () => { results.fill(null); idx = 0; renderQuestion(); });
+    }
 
-function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-function escapeHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; }
+    function escapeHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-renderQuestion();
-</script>
+    renderQuestion();
+  </script>
 
-</body></html>
+  </body>
+
+</html>
